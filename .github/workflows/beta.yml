@@ -7,6 +7,8 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/upstream-sync.txt'
+      - '.gitignore'
   workflow_dispatch:
 
 concurrency:
