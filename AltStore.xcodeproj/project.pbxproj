@@ -973,8 +973,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = revision;
+				revision = e0c7eebc5a4465a3c4680764f26b7a61f567cdaf;
 			};
 		};
 		A8C3702D302DA82A0010213A /* XCRemoteSwiftPackageReference "Nuke" */ = {
@@ -1003,10 +1003,10 @@
 		};
 		A8E8DEA43059BC8800F69B47 /* XCRemoteSwiftPackageReference "CodeSignKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mahee96/CodeSignKit";
+			repositoryURL = "https://github.com/endomarfan/CodeSignKit.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = revision;
+				revision = d0c67710fda9a2646b9e829cb2cf443892728371;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
