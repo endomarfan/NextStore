@@ -107,3 +107,4 @@ scratch*.sh
 # agent configuration stays private (see workspace repo)
 .devin/
 !.github/upstream-sync.txt
+__pycache__/

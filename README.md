@@ -6,6 +6,16 @@ NextStore is an independent fork of [SideStore](https://github.com/SideStore/Sid
 
 SideStore is an iOS application that allows you to sideload apps onto your iOS device with just your Apple ID. It resigns apps with your personal development certificate, and then uses a [specially designed VPN](https://github.com/jkcoxson/em_proxy) in order to trick iOS into installing them. It periodically "refreshes" your apps in the background, to keep their normal 7-day development period from expiring.
 
+## Downloads
+
+| Channel | For | Where |
+|---|---|---|
+| Stable | Everyday use | The release marked "Latest" on the [Releases](https://github.com/endomarfan/NextStore/releases) page |
+| Beta | Testing upcoming fixes | Numbered pre-releases named "NextStore X.Y.Z Beta N" |
+| Nightly | Checking one specific fix; may be broken | Pre-release named "NextStore Nightly" |
+
+Install the IPA with [iLoader](https://iloader.app) over the existing app.
+
 ## Requirements
 
 - Xcode 27.2

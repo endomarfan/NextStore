@@ -6,6 +6,10 @@ on:
       marketing_version:
         type: string
         required: true
+      ref:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -18,6 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           submodules: recursive
 
       - run: brew install ldid xcbeautify

@@ -1,0 +1,69 @@
+name: Nightly
+
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/upstream-sync.txt'
+      - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          base=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
+          echo "version=${base}-nightly.${{ github.run_number }}+${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      marketing_version: ${{ needs.version.outputs.version }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - name: Write release notes
+        run: |
+          python3 .github/scripts/release.py notes --kind nightly --version "$VERSION" --sha "$GITHUB_SHA" \
+            --repo "$GITHUB_REPOSITORY" --ipa SideStore.ipa > notes.md
+
+      - name: Replace nightly release
+        run: |
+          gh release delete nightly --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create nightly SideStore.ipa SideStore.dSYMs.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "NextStore Nightly" \
+            --notes-file notes.md

@@ -11,12 +11,25 @@ By contributing to this project, you agree to the Developer's Certificate of Ori
 
 NextStore follows [SemVer](https://semver.org):
 
-- Pre-releases are published from `develop` as `X.Y.Z-beta.N`.
 - PATCH: fixes only.
 - MINOR: new features.
 - MAJOR: changes that break things for users (data migration, dropped iOS versions).
 
 Stable releases are tagged `vX.Y.Z` on `main`, and the tag must match `MARKETING_VERSION` in `Build.xcconfig`.
+
+## Releases
+
+There are three channels:
+
+- **Stable**: everyday use. Tagged `vX.Y.Z`, shown as "Latest" on the Releases page.
+- **Beta**: testing upcoming fixes. Numbered pre-releases `vX.Y.Z-beta.N`, titled "NextStore X.Y.Z Beta N".
+- **Nightly**: checking one specific fix; may be broken. A single rolling pre-release "NextStore Nightly", rebuilt after every change to `develop`.
+
+To cut a beta: Actions → Beta → Run workflow on `develop`, with optional highlights (markdown shown at the top of the release notes).
+
+To promote a beta: Actions → Release → Run workflow with the beta tag (for example `v1.0.0-beta.3`). It rebuilds that exact commit as `X.Y.Z`, tags it, fast-forwards `main`, and publishes the release. Afterwards bump `MARKETING_VERSION` on `develop` (PATCH by default).
+
+A finished fix reaches a numbered beta within a few days. A beta that passes the device checklist on all test devices is promoted to stable without waiting for more changes.
 
 ## AI-assisted contributions
 
