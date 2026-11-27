@@ -1,0 +1,48 @@
+name: Upstream watch
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: Upstream SideStore changes to review
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect new upstream commits
+        run: |
+          last=$(tr -d '[:space:]' < .github/upstream-sync.txt)
+          git fetch https://github.com/SideStore/SideStore.git develop
+          git log --reverse --format='- [%h](https://github.com/SideStore/SideStore/commit/%H) %s (%an, %ad)' --date=short "${last}..FETCH_HEAD" > commits.md
+          if [ ! -s commits.md ]; then
+            echo "No new upstream commits."
+            exit 0
+          fi
+          {
+            cat commits.md
+            echo
+            echo 'After review, update `.github/upstream-sync.txt` to the newest reviewed commit.'
+          } > body.md
+          echo "has_changes=true" >> "$GITHUB_ENV"
+
+      - name: Create or update issue
+        if: env.has_changes == 'true'
+        run: |
+          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --description "Upstream SideStore changes to review" 2>/dev/null || true
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --label upstream-sync --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body-file body.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label upstream-sync --title "$TITLE" --body-file body.md
+          fi
