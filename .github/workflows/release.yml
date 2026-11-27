@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: v
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          base=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
+          if [ "$base" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match MARKETING_VERSION $base in Build.xcconfig"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tagged commit $GITHUB_SHA is not on main"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: verify
+    uses: ./.github/workflows/build.yml
+    with:
+      marketing_version: ${{ needs.verify.outputs.version }}
+
+  publish:
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-log
+
+      - name: Write release notes
+        run: |
+          prev=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | { grep -v -- '-' || true; } | { grep -vx "v${VERSION}" || true; } | sed -n 1p)
+          if [ -n "$prev" ]; then
+            range="${prev}..${GITHUB_SHA}"
+          else
+            range="-20 ${GITHUB_SHA}"
+          fi
+          {
+            # shellcheck disable=SC2086
+            git log --format='- %s (%h)' $range
+            echo
+            echo "Install: download SideStore.ipa and install it with iLoader over your existing SideStore."
+          } > notes.md
+
+      - name: Create release
+        run: |
+          gh release create "v${VERSION}" SideStore.ipa SideStore.dSYMs.zip build.log \
+            --repo "$GITHUB_REPOSITORY" \
+            --latest \
+            --title "NextStore ${VERSION}" \
+            --notes-file notes.md

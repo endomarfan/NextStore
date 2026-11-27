@@ -1,0 +1,80 @@
+name: Beta
+
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+concurrency:
+  group: beta
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          base=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
+          echo "version=${base}-beta.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      marketing_version: ${{ needs.version.outputs.version }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-log
+
+      - name: Write release notes
+        run: |
+          prev=$(git tag --list 'v*-beta.*' --sort=-v:refname | { grep -vx "v${VERSION}" || true; } | sed -n 1p)
+          if [ -n "$prev" ]; then
+            range="${prev}..${GITHUB_SHA}"
+          else
+            range="-20 ${GITHUB_SHA}"
+          fi
+          {
+            # shellcheck disable=SC2086
+            git log --format='- %s (%h)' $range
+            echo
+            echo "Install: download SideStore.ipa and install it with iLoader over your existing SideStore."
+          } > notes.md
+
+      - name: Create release
+        run: |
+          gh release create "v${VERSION}" SideStore.ipa SideStore.dSYMs.zip build.log \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "NextStore ${VERSION}" \
+            --notes-file notes.md
