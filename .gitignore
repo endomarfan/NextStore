@@ -75,7 +75,7 @@ release-notes.md
 !README.md
 !CONTRIBUTING.md
 !CERTIFICATE-OF-ORIGIN.md
-!AGENTS.md
+!CHANGELOG.md
 !CLAUDE.md
 !GEMINI.md
 *.log
@@ -104,3 +104,5 @@ tmp
 
 scratch*.sh
 *.sh
+# agent configuration stays private (see workspace repo)
+.devin/

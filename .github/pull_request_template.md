@@ -7,5 +7,8 @@
 ### Suggested Testing Steps
 <!-- If applicable, including examples you've already tested with / recommendations for how to test further is very helpful! -->
 
+### Tested on (device, iOS)
+<!-- e.g. iPhone 13, iOS 27.0. Required for changes in sign-in, pairing, VPN, install or refresh. -->
+
 ### Did you use AI to help find, test, or implement this issue or feature?
 <!-- Answer yes or no. If you answer yes, please provide a brief explanation as to how you used it. -->
