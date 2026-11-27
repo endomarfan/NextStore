@@ -8,9 +8,7 @@ body:
     attributes:
       value: |
         ## Please note that the issue tracker is not for support
-        Thanks for taking the time to fill out this bug report! Before you continue filling out the report, please **[search in GitHub Issues](https://github.com/SideStore/SideStore/issues?q=is%3Aissue+is%3Aopen) for the bug you are experiencing** in case it has already been reported.
-        
-        **Please use [Discord](https://discord.gg/sidestore-949183273383395328) or [GitHub Discussions](https://github.com/SideStore/SideStore/discussions) for support.**
+        Thanks for taking the time to fill out this bug report! Before you continue, please **[search in GitHub Issues](https://github.com/endomarfan/NextStore/issues?q=is%3Aissue+is%3Aopen) for the bug you are experiencing** in case it has already been reported. Do not report issues from this fork to the upstream SideStore project.
   - type: textarea
     id: description
     attributes:
@@ -22,17 +20,43 @@ body:
   - type: textarea
     id: how-to-reproduce
     attributes:
-      label: Instructions to reproduce
+      label: Steps to reproduce
       description: Please include clear and consistent instructions for reproducing the bug to make it easier for us to fix it.
+    validations:
+      required: true
+  - type: input
+    id: ios-version
+    attributes:
+      label: iOS version
+      placeholder: e.g. 27.0
     validations:
       required: true
   - type: input
     id: app-version
     attributes:
-      label: What version of SideStore are you using?
-      description: To retrieve this, go to `Settings` in the SideStore app and scroll down to the bottom.
+      label: App version
+      description: To retrieve this, go to `Settings` in the app and scroll down to the bottom.
     validations:
       required: true
+  - type: input
+    id: device-model
+    attributes:
+      label: Device model
+      placeholder: e.g. iPhone 13
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected and actual behavior
+      description: What did you expect to happen, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (optional)
+      description: Attach logs from the app if you have them. Make sure they contain no Apple ID, password or device UDID.
   - type: textarea
     id: other-info
     attributes:
