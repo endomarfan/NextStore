@@ -257,6 +257,18 @@ struct PairingFileManagementView: View {
                         protocolStatusRow(for: proto)
                         divider
                     }
+                    if isValid && proto != viewModel.preferredProtocol {
+                        SwiftUI.Button {
+                            viewModel.setPreferred(proto: proto)
+                        } label: {
+                            Label("Set as Preferred", systemImage: "star")
+                                .font(.system(size: 15, weight: .semibold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 16)
+                                .frame(height: 44)
+                        }
+                        divider
+                    }
                     if proto == .rppairing {
                         if let id = remoteRP?.identifier, !id.isEmpty {
                             identifierRow(label: "Identifier", value: id, fieldKey: "rp_identifier")

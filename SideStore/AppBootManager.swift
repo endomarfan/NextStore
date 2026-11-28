@@ -39,7 +39,8 @@ public final class AppBootManager {
             try await startEMProxy()
         }
 
-        let preferred = PairingFileManager.shared.preferredProtocol
+        // The protocol of the file actually loaded, which can differ from a stored preference whose file is missing
+        let preferred = PairingFileManager.shared.resolvedProtocol() ?? PairingFileManager.shared.preferredProtocol
         try await minimuxerStart(pairingFile, preferred: preferred)
         
         // Validate the pairing by trying to fetch the UDID
