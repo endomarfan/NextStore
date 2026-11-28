@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this feature request! Before you continue filling out the form, please **[search in GitHub Issues](https://github.com/endomarfan/NextStore/issues?q=is%3Aissue+is%3Aopen) for the feature you are suggestion** in case it has already been suggested.
+        Thanks for taking the time to fill out this feature request! Before you continue filling out the form, please **[search in GitHub Issues](https://github.com/NextStoreApp/NextStore/issues?q=is%3Aissue+is%3Aopen) for the feature you are suggestion** in case it has already been suggested.
   - type: textarea
     id: description
     attributes:

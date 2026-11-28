@@ -41,7 +41,7 @@ Changes to sign-in, pairing, VPN, install or refresh must include device test no
 
 ## Setup
 
-1. Clone the repository: `git clone https://github.com/endomarfan/NextStore.git --recurse-submodules`
+1. Clone the repository: `git clone https://github.com/NextStoreApp/NextStore.git --recurse-submodules`
 2. Copy `CodeSigning.xcconfig.sample` to `CodeSigning.xcconfig` and fill in the values.
 3. **(Development only)** Change the value for `ALTDeviceID` in the Info.plist to your device's UDID, otherwise apps will not be resigned (or installed) for the proper device. Do not commit it.
 4. Open `AltStore.xcodeproj` in Xcode (15 or newer; releases are built with Xcode 27.2).

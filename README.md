@@ -1,20 +1,40 @@
+<div align="center">
+
 # NextStore
 
-NextStore is an independent fork of [SideStore](https://github.com/SideStore/SideStore), which is itself a fork of [AltStore](https://github.com/altstoreio/AltStore). The app is still named SideStore and keeps the bundle ID `com.SideStore.SideStore`. This project is not affiliated with the SideStore team. Please do not report issues from this fork to the upstream project.
+**Sideload apps on your iPhone with just your Apple ID — no computer needed after setup.**
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+A stability-focused, independent fork of [SideStore](https://github.com/SideStore/SideStore).
 
-SideStore is an iOS application that allows you to sideload apps onto your iOS device with just your Apple ID. It resigns apps with your personal development certificate, and then uses a [specially designed VPN](https://github.com/jkcoxson/em_proxy) in order to trick iOS into installing them. It periodically "refreshes" your apps in the background, to keep their normal 7-day development period from expiring.
+[![Latest release](https://img.shields.io/github/v/release/NextStoreApp/NextStore?include_prereleases&sort=semver&label=latest&color=7b3fe4)](https://github.com/NextStoreApp/NextStore/releases)
+[![Nightly build](https://img.shields.io/github/actions/workflow/status/NextStoreApp/NextStore/nightly.yml?branch=develop&label=nightly)](https://github.com/NextStoreApp/NextStore/actions/workflows/nightly.yml)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+
+</div>
+
+NextStore installs IPA files on your device, signs them with your personal development certificate, and refreshes them in the background before their 7-day signature expires. It uses a [local VPN loopback](https://github.com/jkcoxson/em_proxy) through [LocalDevVPN](https://github.com/jkcoxson/LocalDevVPN), so after the first install it works without a computer.
+
+The app is still named **SideStore** and keeps the bundle ID `com.SideStore.SideStore`, so it installs over an existing SideStore and keeps your apps and settings. NextStore is not affiliated with the SideStore team — please report problems [here](https://github.com/NextStoreApp/NextStore/issues), not upstream.
+
+## Why this fork
+
+- **Releases you can rely on**: numbered betas, and a stable release as soon as a beta passes device testing.
+- **Stability first**: Apple ID sign-in, 2FA, pairing, VPN, installing and refreshing are fixed before anything new is added.
+- **Reproducible builds**: every dependency is pinned to an exact revision and every IPA is built by GitHub Actions.
 
 ## Downloads
 
 | Channel | For | Where |
 |---|---|---|
-| Stable | Everyday use | The release marked "Latest" on the [Releases](https://github.com/endomarfan/NextStore/releases) page |
+| Stable | Everyday use | The release marked "Latest" on the [Releases](https://github.com/NextStoreApp/NextStore/releases) page |
 | Beta | Testing upcoming fixes | Numbered pre-releases named "NextStore X.Y.Z Beta N" |
 | Nightly | Checking one specific fix; may be broken | Pre-release named "NextStore Nightly" |
 
-Install the IPA with [iLoader](https://iloader.app) over the existing app.
+### Installing
+
+1. Download **SideStore.ipa** from a release.
+2. Install it with [iLoader](https://iloader.app) (Windows, macOS, Linux). Installing over SideStore keeps your apps and settings.
+3. Install [LocalDevVPN](https://apps.apple.com/app/localdevvpn/id6755608044) from the App Store and turn it on when you install or refresh apps.
 
 ## Requirements
 
@@ -27,7 +47,7 @@ Install the IPA with [iLoader](https://iloader.app) over the existing app.
 make build fakesign ipa
 ```
 
-This creates `SideStore.ipa`. Prebuilt IPAs are published on the [Releases](https://github.com/endomarfan/NextStore/releases) page.
+This creates `SideStore.ipa`. Prebuilt IPAs are published on the [Releases](https://github.com/NextStoreApp/NextStore/releases) page.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
