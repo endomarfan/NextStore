@@ -10,11 +10,17 @@
 import Foundation
 import CoreData
 import SideSign
+import NextStoreKit
 
 struct SignInResult {
     let team: ALTTeam
     let certificate: ALTCertificate?
     let session: ALTAppleAPISession
+}
+
+struct SignInFailureError: LocalizedError {
+    let failure: SignInFailure
+    var errorDescription: String? { failure.message }
 }
 
 final class SignInOperation: BaseStandaloneOperation<StandaloneOperationContext, SignInResult>, @unchecked Sendable {
@@ -137,9 +143,28 @@ final class SignInOperation: BaseStandaloneOperation<StandaloneOperationContext,
                 return (account, session)
             } catch {
                 self.debugLog("[SignInOperation] authenticationLoop: Attempt failed with error: \(error)")
-                await handler.handleSignInResult(.failure(error))
+                await handler.handleSignInResult(.failure(await self.userFacingSignInError(error)))
             }
         }
+    }
+
+    private func userFacingSignInError(_ error: Error) async -> Error {
+        var errorCode: Int?
+        var rawPayload: String?
+        if let serverError = error as? ServerError {
+            switch serverError {
+            case .underlyingError(let code, _): errorCode = code
+            case .invalidResponseFormat(let payload): rawPayload = payload
+            default: break
+            }
+        }
+        guard let failure = SignInFailure.classify(errorCode: errorCode, rawPayload: rawPayload) else {
+            return error
+        }
+        if failure == .deviceIdentityRejected {
+            AnisetteConfigManager.shared.discardAdiBlob()
+        }
+        return SignInFailureError(failure: failure)
     }
     
     private func signIn(appleID: String, password: String) async throws -> (ALTAccount, ALTAppleAPISession) {

@@ -29,7 +29,7 @@ To cut a beta: Actions → Beta → Run workflow on `develop`, with optional hig
 
 To promote a beta: Actions → Release → Run workflow with the beta tag (for example `v1.0.0-beta.3`). It rebuilds that exact commit as `X.Y.Z`, tags it, fast-forwards `main`, and publishes the release. Afterwards bump `MARKETING_VERSION` on `develop` (PATCH by default).
 
-A finished fix reaches a numbered beta within a few days. A beta that passes the device checklist on all test devices is promoted to stable without waiting for more changes.
+Every merged fix is published in Nightly. A numbered beta bundles fixes that were checked on Nightly; while unreleased fixes exist, a beta follows within two weeks. A beta that passes the device checklist is promoted to stable.
 
 ## AI-assisted contributions
 
