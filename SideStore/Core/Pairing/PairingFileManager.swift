@@ -57,7 +57,6 @@ final class PairingFileManager: NSObject {
 
         let chosen = PairingSelection.choose(
             preferred: preferred.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
-            active: active.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
             available: Set(available.compactMap { PairingSelection.Kind(rawValue: $0.rawValue) }),
             supportsRemotePairing: ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 17, minorVersion: 0, patchVersion: 0))
         ).flatMap { PairingProtocol(rawValue: $0.rawValue) }
@@ -128,7 +127,6 @@ final class PairingFileManager: NSObject {
             // A combined file (e.g. from iLoader) holds both Remote Pairing and Lockdown credentials: pick one by the usual rule instead of failing
             let chosen = PairingSelection.choose(
                 preferred: preferredProtocol.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
-                active: persistedActiveProtocol.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
                 available: [.rppairing, .lockdown],
                 supportsRemotePairing: ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 17, minorVersion: 0, patchVersion: 0))
             ).flatMap { PairingProtocol(rawValue: $0.rawValue) } ?? .lockdown
