@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         ## Please note that the issue tracker is not for support
-        Thanks for taking the time to fill out this bug report! Before you continue, please **[search in GitHub Issues](https://github.com/endomarfan/NextStore/issues?q=is%3Aissue+is%3Aopen) for the bug you are experiencing** in case it has already been reported. Do not report issues from this fork to the upstream SideStore project.
+        Thanks for taking the time to fill out this bug report! Before you continue, please **[search in GitHub Issues](https://github.com/NextStoreApp/NextStore/issues?q=is%3Aissue+is%3Aopen) for the bug you are experiencing** in case it has already been reported. Do not report issues from this fork to the upstream SideStore project.
   - type: textarea
     id: description
     attributes:
