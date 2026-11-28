@@ -9,6 +9,7 @@
 import Foundation
 import UniformTypeIdentifiers
 import MinimuxerCommon
+import NextStoreKit
 
 public struct PairingFileMetadata: Sendable {
     public let exists: Bool
@@ -49,15 +50,35 @@ final class PairingFileManager: NSObject {
         return FileManager.default.fileExists(atPath: pairingFileURL(for: mode).path)
     }
 
+    nonisolated func resolvedProtocol() -> PairingProtocol? {
+        let preferred = preferredProtocol
+        let active = persistedActiveProtocol
+        let available = Set([PairingProtocol.rppairing, .lockdown].filter { hasPairingFile(for: $0) })
+
+        let chosen = PairingSelection.choose(
+            preferred: preferred.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
+            active: active.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
+            available: Set(available.compactMap { PairingSelection.Kind(rawValue: $0.rawValue) }),
+            supportsRemotePairing: ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 17, minorVersion: 0, patchVersion: 0))
+        ).flatMap { PairingProtocol(rawValue: $0.rawValue) }
+
+        guard let chosen else { return nil }
+
+        if chosen != preferred {
+            let availableNames = available.map(\.rawValue).sorted()
+            debugLog("[PairingFile] Auto-selected \(chosen.rawValue) (preferred: \(preferred?.rawValue ?? "none"), active: \(active?.rawValue ?? "none"), available: \(availableNames))")
+        }
+        if preferred == nil {
+            preferredProtocol = chosen
+        }
+        if UserDefaults.standard.isPairingReset {
+            UserDefaults.standard.isPairingReset = false
+        }
+        return chosen
+    }
+
     nonisolated func hasPairingFile() -> Bool {
-        guard !UserDefaults.standard.isPairingReset else { return false }
-        if let target = preferredProtocol, hasPairingFile(for: target) {
-            return true
-        }
-        if let mode = persistedActiveProtocol, hasPairingFile(for: mode) {
-            return true
-        }
-        return false
+        return resolvedProtocol() != nil
     }
 
     nonisolated func metadata(for mode: PairingProtocol) -> PairingFileMetadata {
@@ -86,9 +107,11 @@ final class PairingFileManager: NSObject {
     }
 
     nonisolated func fetchPairingFile(preferred: PairingProtocol? = nil) -> String? {
+        if preferred == nil {
+            return resolvedProtocol().flatMap { fetchPairingFile(for: $0) }
+        }
         guard !UserDefaults.standard.isPairingReset else { return nil }
-        let targetPreferred = preferred ?? preferredProtocol
-        if let targetPreferred, let contents = fetchPairingFile(for: targetPreferred) {
+        if let preferred, let contents = fetchPairingFile(for: preferred) {
             return contents
         }
         if let persisted = persistedActiveProtocol {

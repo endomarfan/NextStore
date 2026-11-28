@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Pairing: load an existing pairing file at launch even when no protocol is marked preferred (no more prompt on every launch).
 - Apple ID sign-in: new anisette defaults (Mac server, Mac OS X client info), automatic client-info normalization, automatic adi.pb re-provisioning when the client identity changes, and Mac-only server failover.
 
 ### Changed
