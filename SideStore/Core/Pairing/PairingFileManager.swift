@@ -122,7 +122,19 @@ final class PairingFileManager: NSObject {
     
     @discardableResult
     nonisolated func parse(content: String, preferred: PairingProtocol? = nil) throws -> any PairingFile {
-        try PairingFileParser.parse(content: content, preferred: preferred)
+        do {
+            return try PairingFileParser.parse(content: content, preferred: preferred)
+        } catch PairingError.ambiguous(_) where preferred == nil {
+            // A combined file (e.g. from iLoader) holds both Remote Pairing and Lockdown credentials: pick one by the usual rule instead of failing
+            let chosen = PairingSelection.choose(
+                preferred: preferredProtocol.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
+                active: persistedActiveProtocol.flatMap { PairingSelection.Kind(rawValue: $0.rawValue) },
+                available: [.rppairing, .lockdown],
+                supportsRemotePairing: ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 17, minorVersion: 0, patchVersion: 0))
+            ).flatMap { PairingProtocol(rawValue: $0.rawValue) } ?? .lockdown
+            debugLog("[PairingFile] Combined pairing file (Remote Pairing + Lockdown): using \(chosen.rawValue)")
+            return try PairingFileParser.parse(content: content, preferred: chosen)
+        }
     }
 
     @discardableResult
@@ -135,6 +147,12 @@ final class PairingFileManager: NSObject {
         }
         try contents.write(to: destinationURL, atomically: true, encoding: .utf8)
         debugLog("[PairingFile] Saved \(parsed.mode.rawValue) pairing file to: \(destinationURL.path)")
+        // A combined file also serves the other protocol, as the legacy-file migration already does
+        let other: PairingProtocol = parsed.mode == .rppairing ? .lockdown : .rppairing
+        if (try? PairingFileParser.parse(content: contents, preferred: other)) != nil {
+            try? contents.write(to: pairingFileURL(for: other), atomically: true, encoding: .utf8)
+            debugLog("[PairingFile] Combined pairing file: also saved as \(other.rawValue)")
+        }
         UserDefaults.standard.isPairingReset = false
         return parsed
     }
