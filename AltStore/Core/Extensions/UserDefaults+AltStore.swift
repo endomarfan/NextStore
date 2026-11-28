@@ -357,6 +357,10 @@ public extension UserDefaults
         get { self.bool(forKey: #function) }
         set { self.set(newValue, forKey: #function) }
     }
+    @objc var anisetteProvisionedClientInfo: String? {
+        get { self.string(forKey: #function) }
+        set { self.set(newValue, forKey: #function) }
+    }
 
     @objc var recreateDatabaseOnNextStart: Bool {
         get { self.bool(forKey: #function) }
@@ -552,7 +556,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.menuAnisetteURL): AppConstants.Anisette.Servers.defaultServerURL,
             #keyPath(UserDefaults.isAnisetteOfflineMode): false,
             #keyPath(UserDefaults.disableAnisetteRotation): false,
-            #keyPath(UserDefaults.useOnDeviceAnisette): true,
+            #keyPath(UserDefaults.useOnDeviceAnisette): false,
             #keyPath(UserDefaults.useLocalVPN): true,
             #keyPath(UserDefaults.acceptIPv6ConnectionConfig): false,
             #keyPath(UserDefaults.isAutoRetryRemotePairingPortEnabled): true,

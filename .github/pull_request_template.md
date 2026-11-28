@@ -1,14 +1,14 @@
-### Description of Changes
-<!-- Brief description or overview on what was changed in the PR -->
+### What changed
+<!-- Short overview of the change. -->
 
-### Rationale behind Changes
-<!-- Why were these changes made?  What problem does it solve / area does it improve? -->
+### Why
+<!-- The problem this solves. Link the issue, log or evidence. -->
 
-### Suggested Testing Steps
-<!-- If applicable, including examples you've already tested with / recommendations for how to test further is very helpful! -->
+### How it was tested
+<!-- Unit tests, CI, simulator, device. Be exact. -->
+
+### Not tested / risks
+<!-- What could not be verified, and what could break. -->
 
 ### Tested on (device, iOS)
 <!-- e.g. iPhone 13, iOS 27.0. Required for changes in sign-in, pairing, VPN, install or refresh. -->
-
-### Did you use AI to help find, test, or implement this issue or feature?
-<!-- Answer yes or no. If you answer yes, please provide a brief explanation as to how you used it. -->

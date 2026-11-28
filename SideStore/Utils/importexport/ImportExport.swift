@@ -124,6 +124,7 @@ class ImportExport {
                 AuthManager.shared.password = pass
             }
             AnisetteConfigManager.shared.anisetteAdiBlob = account.anisetteAdiBlob
+            UserDefaults.standard.anisetteProvisionedClientInfo = nil
             AnisetteConfigManager.shared.anisetteIdentifier = account.anisetteIdentifier
             
             let altCert = try CertificateManager.parse(account.certificateData, password: account.certificatePassword)
@@ -287,6 +288,7 @@ extension ImportExport {
         AuthManager.shared.currentAppleID = account.email
         AuthManager.shared.password = account.password
         AnisetteConfigManager.shared.anisetteAdiBlob = account.anisetteAdiBlob
+        UserDefaults.standard.anisetteProvisionedClientInfo = nil
         AnisetteConfigManager.shared.anisetteIdentifier = account.anisetteIdentifier
         
         let altCert = try CertificateManager.parse(account.certificateData, password: account.certificatePassword)

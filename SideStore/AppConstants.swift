@@ -9,6 +9,7 @@
 import Foundation
 import SideSign
 import Minimuxer
+import NextStoreKit
 
 public enum AppConstants {
     // features required for functioning
@@ -68,9 +69,8 @@ public enum AppConstants {
         public static let defaultODAMetadataURL       = URL(string: "https://zzz.haus/oda.json")!
         public static var defaultODAMetadataURLString: String { defaultODAMetadataURL.absoluteString }
 
-        // Proxied from upstream SideSign
-        public static let defaultClientInfo           = Constants.Anisette.defaultClientInfo
-        public static let defaultUserAgent            = Constants.Anisette.defaultUserAgent
+        public static let defaultClientInfo           = AnisettePolicy.defaultClientInfo
+        public static let defaultUserAgent            = AnisettePolicy.defaultUserAgent
 
         public enum URLs {
             public static let grandSlamLookup = Constants.Anisette.URLs.grandSlamLookup
@@ -96,7 +96,7 @@ public enum AppConstants {
 
         public enum Servers {
             public static let defaultSource        = "https://servers.sidestore.io/servers.json"
-            public static let defaultServerURL     = "https://ani.sidestore.io"
+            public static let defaultServerURL     = AnisettePolicy.defaultServerURL
             public static let connectivityCheckURL = URL(string: "https://www.apple.com/library/test/success.html")!
         }
 

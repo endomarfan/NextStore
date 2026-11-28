@@ -9,12 +9,13 @@
 import Foundation
 import CoreData
 import SideSign
+import NextStoreKit
 
 public final class MaintenanceManager {
     public static let shared = MaintenanceManager()
 
     // Increment this counter whenever you want to trigger another maintenance pass in future updates
-    public static let currentMaintenanceCounter = 7
+    public static let currentMaintenanceCounter = 8
 
     public static let maintenanceCounterFileName = ".maintenance_counter"
 
@@ -75,6 +76,8 @@ public final class MaintenanceManager {
                 SideSignConfigManager.shared.resetToDefaults()
             case 7:
                 await migratePairingFiles()
+            case 8:
+                await migrateAnisetteSettings()
             default:
                 break
             }
@@ -199,6 +202,34 @@ private extension MaintenanceManager {
                     debugLog("[MaintenanceManager] Failed to migrate signing cert from '\(legacyCertURL.path)': \(error)")
                 }
             }
+        }
+    }
+
+    func migrateAnisetteSettings() async {
+        let defaults = UserDefaults.standard
+        let saved = await AnisetteConfigManager.shared.savedClientInfoOverride()
+        let before = AnisettePolicy.Settings(
+            useOnDeviceAnisette: defaults.useOnDeviceAnisette,
+            serverURL: defaults.menuAnisetteURL,
+            clientInfo: saved.clientInfo,
+            userAgent: saved.userAgent
+        )
+        let migration = AnisettePolicy.migrate(before)
+
+        defaults.useOnDeviceAnisette = migration.settings.useOnDeviceAnisette
+        defaults.menuAnisetteURL = migration.settings.serverURL
+        defaults.customAnisetteClientInfo = migration.settings.clientInfo
+        defaults.customAnisetteUserAgent = migration.settings.userAgent
+
+        for change in migration.changes {
+            debugLog("[MaintenanceManager] Anisette migration: \(change)")
+        }
+
+        if migration.resetAdiBlob {
+            AnisetteConfigManager.shared.discardAdiBlob()
+            debugLog("[MaintenanceManager] Anisette migration: adi.pb reset")
+        } else {
+            await AnisetteConfigManager.shared.recordProvisionedClientInfo()
         }
     }
 

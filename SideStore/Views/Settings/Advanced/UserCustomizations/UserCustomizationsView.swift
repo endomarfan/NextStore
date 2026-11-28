@@ -119,7 +119,7 @@ struct UserCustomizationsView: View {
                     VStack(spacing: 0) {
                         toggleRow(
                             title: "On-Device Anisette",
-                            subtitle: "Run ADI emulation directly on device instead of remote servers",
+                            subtitle: "Apple currently rejects on-device anisette (error -80046). Keep this off unless a fix is announced.",
                             isOn: Binding(
                                 get: { useOnDeviceAnisette },
                                 set: { newValue in

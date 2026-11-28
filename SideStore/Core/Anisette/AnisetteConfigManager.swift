@@ -8,6 +8,7 @@
 import Foundation
 import AnisetteKit
 import SideSign
+import NextStoreKit
 
 public struct AnisetteConfig: Codable, Equatable {
     public var clientInfo: String
@@ -153,10 +154,42 @@ public actor AnisetteConfigManager {
         )
     }
 
+    public func effectiveClientInfo() -> String {
+        let config = loadConfig()
+        let clientInfo = config.clientInfo.isEmpty ? AppConstants.Anisette.defaultClientInfo : config.clientInfo
+        return AnisettePolicy.normalizedClientInfo(clientInfo)
+    }
+
+    public nonisolated func discardAdiBlob() {
+        anisetteAdiBlob = nil
+        UserDefaults.standard.anisetteProvisionedClientInfo = nil
+    }
+
+    public func discardAdiBlobIfClientInfoChanged() {
+        let recorded = UserDefaults.standard.anisetteProvisionedClientInfo
+        let current = effectiveClientInfo()
+        if AnisettePolicy.needsReprovisioning(provisionedClientInfo: recorded, currentClientInfo: current) {
+            debugLog("[AnisetteConfigManager] Client info changed since adi.pb was provisioned -> discarding adi.pb to re-provision")
+            discardAdiBlob()
+        }
+    }
+
+    public func savedClientInfoOverride() -> (clientInfo: String?, userAgent: String?) {
+        let ud = UserDefaults.standard
+        let file = (try? Data(contentsOf: configFileURL)).flatMap { try? Foundation.JSONDecoder().decode(AnisetteConfig.self, from: $0) }
+        func firstNonEmpty(_ values: String?...) -> String? { values.compactMap { $0 }.first { !$0.isEmpty } }
+        return (firstNonEmpty(ud.customAnisetteClientInfo, file?.clientInfo),
+                firstNonEmpty(ud.customAnisetteUserAgent, file?.userAgent))
+    }
+
+    public func recordProvisionedClientInfo() {
+        UserDefaults.standard.anisetteProvisionedClientInfo = effectiveClientInfo()
+    }
+
     public func makeRequestHeaders() -> AnisetteRequestHeaders {
         let config = loadConfig()
         return AnisetteRequestHeaders().with {
-            $0.clientInfo = config.clientInfo.isEmpty ? AppConstants.Anisette.defaultClientInfo : config.clientInfo
+            $0.clientInfo = effectiveClientInfo()
             $0.userAgent  = config.userAgent.isEmpty ? AppConstants.Anisette.defaultUserAgent : config.userAgent
             if let customLU = config.customLocalUserID, !customLU.isEmpty { $0.localUserID = customLU }
             if let customDev = config.customDeviceID, !customDev.isEmpty { $0.deviceID = customDev }

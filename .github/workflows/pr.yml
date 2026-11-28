@@ -30,6 +30,13 @@ jobs:
           base=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
           echo "version=${base}-pr.${PR_NUMBER}+${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
 
+  unit-tests:
+    runs-on: ubuntu-latest
+    container: swift:6.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test --package-path Packages/NextStoreKit
+
   build:
     needs: version
     uses: ./.github/workflows/build.yml
