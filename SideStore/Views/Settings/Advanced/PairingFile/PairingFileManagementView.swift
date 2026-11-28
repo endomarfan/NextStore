@@ -9,6 +9,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import MinimuxerCommon
+import NextStoreKit
 
 private extension Color {
     static let settingsRowBackground = Color.white.opacity(0.15)
@@ -23,6 +24,18 @@ struct PairingFileManagementView: View {
             VStack(alignment: .leading, spacing: 24) {
                 activeProtocolSection
                 pairingFilesSection
+                    .alert(
+                        preferredAlertTitle,
+                        isPresented: Binding(
+                            get: { viewModel.pendingPreferred != nil },
+                            set: { if !$0 { viewModel.pendingPreferred = nil } }
+                        ),
+                        presenting: viewModel.pendingPreferred
+                    ) { proto in
+                        preferredAlertActions(for: proto)
+                    } message: { proto in
+                        Text(preferredAlertMessage(for: proto))
+                    }
                 pairingMethodsSection
                 managementSection
             }
@@ -90,6 +103,63 @@ struct PairingFileManagementView: View {
                 )
             }
         }
+    }
+
+    private var supportsRemotePairing: Bool {
+        ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 17, minorVersion: 0, patchVersion: 0))
+    }
+
+    private func displayName(for proto: PairingProtocol) -> String {
+        proto == .rppairing ? "Remote Pairing" : "Lockdown"
+    }
+
+    private func needsWarning(for proto: PairingProtocol) -> Bool {
+        guard let kind = PairingSelection.Kind(rawValue: proto.rawValue) else { return false }
+        return PairingSelection.needsConfirmationWarning(for: kind, supportsRemotePairing: supportsRemotePairing)
+    }
+
+    private func isInstalledAndValid(_ proto: PairingProtocol) -> Bool {
+        guard let content = PairingFileManager.shared.fetchPairingFile(for: proto) else { return false }
+        return (try? PairingFileManager.shared.parse(content: content, preferred: proto)) != nil
+    }
+
+    private var preferredAlertTitle: String {
+        guard let proto = viewModel.pendingPreferred else { return "" }
+        let ios = UIDevice.current.systemVersion
+        if needsWarning(for: proto) {
+            return "Use \(displayName(for: proto)) on iOS \(ios)?"
+        }
+        return "Use \(displayName(for: proto)) as preferred?"
+    }
+
+    private func preferredAlertMessage(for proto: PairingProtocol) -> String {
+        guard needsWarning(for: proto) else {
+            return "NextStore will use this pairing file to connect to your device."
+        }
+        if proto == .lockdown {
+            return "Remote Pairing is recommended on iOS 17 and later. With Lockdown, connections to your device often fail (BrokenPipe, InvalidVPN), especially on iOS 26.4 and later."
+        }
+        return "Remote Pairing needs iOS 17 or later. On this iOS version, use Lockdown."
+    }
+
+    @ViewBuilder
+    private func preferredAlertActions(for proto: PairingProtocol) -> some View {
+        if needsWarning(for: proto) {
+            let alternative: PairingProtocol = proto == .lockdown ? .rppairing : .lockdown
+            if isInstalledAndValid(alternative) {
+                SwiftUI.Button("Use \(displayName(for: alternative))") {
+                    viewModel.setPreferred(proto: alternative)
+                }
+            }
+            SwiftUI.Button("Use \(displayName(for: proto)) Anyway", role: .destructive) {
+                viewModel.setPreferred(proto: proto)
+            }
+        } else {
+            SwiftUI.Button("Use \(displayName(for: proto))") {
+                viewModel.setPreferred(proto: proto)
+            }
+        }
+        SwiftUI.Button("Cancel", role: .cancel) {}
     }
 
     private var activeProtocolSection: some View {
@@ -215,7 +285,7 @@ struct PairingFileManagementView: View {
 
                         if proto != viewModel.preferredProtocol {
                             SwiftUI.Button {
-                                viewModel.setPreferred(proto: proto)
+                                viewModel.requestPreferred(proto: proto)
                             } label: {
                                 Label("Set as Preferred", systemImage: "star.fill")
                             }
@@ -257,18 +327,6 @@ struct PairingFileManagementView: View {
                         protocolStatusRow(for: proto)
                         divider
                     }
-                    if isValid && proto != viewModel.preferredProtocol {
-                        SwiftUI.Button {
-                            viewModel.setPreferred(proto: proto)
-                        } label: {
-                            Label("Set as Preferred", systemImage: "star")
-                                .font(.system(size: 15, weight: .semibold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 16)
-                                .frame(height: 44)
-                        }
-                        divider
-                    }
                     if proto == .rppairing {
                         if let id = remoteRP?.identifier, !id.isEmpty {
                             identifierRow(label: "Identifier", value: id, fieldKey: "rp_identifier")
@@ -303,6 +361,26 @@ struct PairingFileManagementView: View {
                     if let mod = modDate {
                         divider
                         infoRow(label: "Date Modified", value: formatDate(mod))
+                    }
+                    if isValid && proto != viewModel.preferredProtocol {
+                        divider
+                        SwiftUI.Button {
+                            viewModel.requestPreferred(proto: proto)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "star")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.white.opacity(0.6))
+                                Text("Set as Preferred")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 40)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             } else {

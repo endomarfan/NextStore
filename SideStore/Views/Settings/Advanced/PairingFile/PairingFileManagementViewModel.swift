@@ -39,6 +39,7 @@ public final class PairingFileManagementViewModel: ObservableObject {
     @Published public var targetImportMode: PairingProtocol? = nil
     @Published public var activeAlert: ActiveAlert? = nil
     @Published public var isActivating: Bool = false
+    @Published public var pendingPreferred: PairingProtocol? = nil
 
     public let supportedProtocols: [PairingProtocol] = [.lockdown, .rppairing]
 
@@ -185,6 +186,10 @@ public final class PairingFileManagementViewModel: ObservableObject {
             activeAlert = .importError("Failed to activate \(proto.rawValue): \(error.localizedDescription)")
             refresh()
         }
+    }
+
+    public func requestPreferred(proto: PairingProtocol) {
+        pendingPreferred = proto
     }
 
     public func setPreferred(proto: PairingProtocol) {
