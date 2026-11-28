@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Release channels: rolling Nightly, numbered Beta, Stable promoted from a tested beta.
 - Forked from SideStore develop @ 4f3d18d9 (2026-11-06).
 
 ### Removed

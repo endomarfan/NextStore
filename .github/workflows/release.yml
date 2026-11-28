@@ -1,8 +1,20 @@
 name: Release
 
 on:
-  push:
-    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      beta_tag:
+        description: Tested beta to promote to stable (e.g. v1.0.0-beta.3)
+        type: string
+        required: true
+      highlights:
+        description: Optional summary shown at the top of the release notes (markdown)
+        type: string
+        required: false
+
+concurrency:
+  group: releases
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -12,29 +24,52 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
+      sha: ${{ steps.v.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: refs/tags/${{ inputs.beta_tag }}
           fetch-depth: 0
       - id: v
+        env:
+          BETA_TAG: ${{ inputs.beta_tag }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          base=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
-          if [ "$base" != "$version" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match MARKETING_VERSION $base in Build.xcconfig"
+          if ! [[ "$BETA_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-beta\.([0-9]+)$ ]]; then
+            echo "::error::$BETA_TAG is not a beta tag like v1.0.0-beta.3"
             exit 1
           fi
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::Tagged commit $GITHUB_SHA is not on main"
+          base="${BASH_REMATCH[1]}"
+          number="${BASH_REMATCH[2]}"
+          sha=$(git rev-parse "refs/tags/${BETA_TAG}^{commit}")
+          current=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
+          if [ "$current" != "$base" ]; then
+            echo "::error::$BETA_TAG is for $base but MARKETING_VERSION in Build.xcconfig is $current"
             exit 1
           fi
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          newest=$(git tag --list "v${base}-beta.*" | sed -n 's/.*-beta\.//p' | sort -n | tail -n 1)
+          if [ "$newest" != "$number" ]; then
+            echo "::error::Newer beta exists: v${base}-beta.${newest}"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v${base}" > /dev/null; then
+            echo "::error::v${base} already exists"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor origin/main "$sha"; then
+            echo "::error::main is not an ancestor of $BETA_TAG, so it cannot be fast-forwarded"
+            exit 1
+          fi
+          {
+            echo "version=${base}"
+            echo "sha=${sha}"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: verify
     uses: ./.github/workflows/build.yml
     with:
       marketing_version: ${{ needs.verify.outputs.version }}
+      ref: ${{ needs.verify.outputs.sha }}
 
   publish:
     needs: [verify, build]
@@ -44,6 +79,9 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ needs.verify.outputs.version }}
+      SHA: ${{ needs.verify.outputs.sha }}
+      BETA_TAG: ${{ inputs.beta_tag }}
+      HIGHLIGHTS: ${{ inputs.highlights }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,29 +91,26 @@ jobs:
         with:
           name: build-output
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-log
-
       - name: Write release notes
         run: |
-          prev=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | { grep -v -- '-' || true; } | { grep -vx "v${VERSION}" || true; } | sed -n 1p)
-          if [ -n "$prev" ]; then
-            range="${prev}..${GITHUB_SHA}"
-          else
-            range="-20 ${GITHUB_SHA}"
-          fi
-          {
-            # shellcheck disable=SC2086
-            git log --format='- %s (%h)' $range
-            echo
-            echo "Install: download SideStore.ipa and install it with iLoader over your existing SideStore."
-          } > notes.md
+          printf '%s' "$HIGHLIGHTS" > highlights.md
+          python3 .github/scripts/release.py notes --kind stable --version "$VERSION" --tag "v${VERSION}" --sha "$SHA" \
+            --repo "$GITHUB_REPOSITORY" --ipa SideStore.ipa --promoted-from "$BETA_TAG" --highlights highlights.md > notes.md
+
+      - name: Fast-forward main and tag
+        run: |
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/heads/main" -f sha="$SHA" -F force=false
+          git tag "v${VERSION}" "$SHA"
+          git push origin "refs/tags/v${VERSION}"
 
       - name: Create release
         run: |
-          gh release create "v${VERSION}" SideStore.ipa SideStore.dSYMs.zip build.log \
+          gh release create "v${VERSION}" SideStore.ipa SideStore.dSYMs.zip \
             --repo "$GITHUB_REPOSITORY" \
             --latest \
             --title "NextStore ${VERSION}" \
             --notes-file notes.md
+
+      - name: Next steps
+        run: |
+          echo "::notice::Next: bump MARKETING_VERSION on develop (e.g. X.Y.(Z+1))"

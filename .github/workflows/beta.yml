@@ -1,18 +1,15 @@
 name: Beta
 
 on:
-  push:
-    branches: [develop]
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/upstream-sync.txt'
-      - '.gitignore'
   workflow_dispatch:
+    inputs:
+      highlights:
+        description: Optional summary shown at the top of the release notes (markdown)
+        type: string
+        required: false
 
 concurrency:
-  group: beta
+  group: releases
   cancel-in-progress: false
 
 permissions:
@@ -22,13 +19,30 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
+      base: ${{ steps.v.outputs.base }}
+      number: ${{ steps.v.outputs.number }}
       version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
     steps:
+      - name: Require develop
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/develop" ]; then
+            echo "::error::Run this workflow on the develop branch (selected: $GITHUB_REF)"
+            exit 1
+          fi
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: v
         run: |
           base=$(sed -n 's/^MARKETING_VERSION = //p' Build.xcconfig)
-          echo "version=${base}-beta.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          number=$(python3 .github/scripts/release.py next-beta --base "$base")
+          {
+            echo "base=${base}"
+            echo "number=${number}"
+            echo "version=${base}-beta.${number}"
+            echo "tag=v${base}-beta.${number}"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: version
@@ -44,6 +58,10 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ needs.version.outputs.version }}
+      TAG: ${{ needs.version.outputs.tag }}
+      BASE: ${{ needs.version.outputs.base }}
+      NUMBER: ${{ needs.version.outputs.number }}
+      HIGHLIGHTS: ${{ inputs.highlights }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,30 +71,17 @@ jobs:
         with:
           name: build-output
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-log
-
       - name: Write release notes
         run: |
-          prev=$(git tag --list 'v*-beta.*' --sort=-v:refname | { grep -vx "v${VERSION}" || true; } | sed -n 1p)
-          if [ -n "$prev" ]; then
-            range="${prev}..${GITHUB_SHA}"
-          else
-            range="-20 ${GITHUB_SHA}"
-          fi
-          {
-            # shellcheck disable=SC2086
-            git log --format='- %s (%h)' $range
-            echo
-            echo "Install: download SideStore.ipa and install it with iLoader over your existing SideStore."
-          } > notes.md
+          printf '%s' "$HIGHLIGHTS" > highlights.md
+          python3 .github/scripts/release.py notes --kind beta --version "$VERSION" --tag "$TAG" --sha "$GITHUB_SHA" \
+            --repo "$GITHUB_REPOSITORY" --ipa SideStore.ipa --highlights highlights.md > notes.md
 
       - name: Create release
         run: |
-          gh release create "v${VERSION}" SideStore.ipa SideStore.dSYMs.zip build.log \
+          gh release create "$TAG" SideStore.ipa SideStore.dSYMs.zip \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
-            --title "NextStore ${VERSION}" \
+            --title "NextStore ${BASE} Beta ${NUMBER}" \
             --notes-file notes.md
